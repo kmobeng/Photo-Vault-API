@@ -1,0 +1,24 @@
+import { InferSchemaType, model, Schema } from "mongoose";
+
+const PhotoSchema = new Schema({
+  title: { type: String, required: [true, "title is required"] },
+  description: { type: String },
+  visibility: { type: String, enum: ["private", "public"], default: "public" },
+  url: String,
+  publicId: String,
+  user: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+    required: [true, "user field is required"],
+  },
+  album: { type: Schema.Types.ObjectId, ref: "Album" },
+  createdAt: { type: Date, default: Date.now },
+});
+
+PhotoSchema.index({ user: 1, createdAt: -1 });
+
+export type IPhoto = InferSchemaType<typeof PhotoSchema>;
+
+const Photo = model<IPhoto>("Photo", PhotoSchema);
+
+export default Photo;
