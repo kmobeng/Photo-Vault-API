@@ -3,6 +3,7 @@ import Photo from "../model/photo.model";
 import { createError } from "../utils/error.util";
 import { cloudinary, RedisClient } from "../config/db.config";
 import APIFeatures from "../utils/APIFeatures.util";
+import User from "../model/user.model";
 
 export const uploadPhotoService = async (
   title: string,
@@ -134,16 +135,13 @@ export const getSinglePhotoService = async (
     }
 
     const isOwner = userId === reqUserId;
-    const photoKey = `photo:${userId}:${photoId}:${
-      isOwner ? "owner" : "public"
-    }`;
+    const photoKey = `photo:${photoId}:${isOwner ? "owner" : "public"}`;
 
     const cachedPhoto = await RedisClient.get(photoKey);
 
     if (cachedPhoto) {
       return JSON.parse(cachedPhoto);
     }
-
     const query: any = { _id: photoId, user: userId };
     if (!isOwner) {
       query.visibility = "public";
@@ -189,8 +187,8 @@ export const updatePhotoService = async (
     if (photosKey.length !== 0) {
       await RedisClient.del(...photosKey);
     }
-    await RedisClient.del(`photo:${userId}:${photoId}:owner`);
-    await RedisClient.del(`photo:${userId}:${photoId}:public`);
+    await RedisClient.del(`photo:${photoId}:owner`);
+    await RedisClient.del(`photo:${photoId}:public`);
 
     return photo;
   } catch (error) {
@@ -198,16 +196,24 @@ export const updatePhotoService = async (
   }
 };
 
-export const deletePhotoService = async (photoId: any, userId: string) => {
+export const deletePhotoService = async (
+  photoId: any,
+  userId: string,
+  role?: string
+) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(photoId)) {
       throw createError("Invalid photo ID", 400);
     }
 
-    const photo: any = await Photo.findOneAndDelete({
-      _id: photoId,
-      user: userId,
-    });
+    let query: any;
+    if (!role) {
+      query = { _id: photoId, user: userId };
+    } else {
+      query = { _id: photoId, user: userId, visibility: "public" };
+    }
+
+    const photo: any = await Photo.findOneAndDelete(query);
     if (!photo) {
       throw createError("No photo found", 404);
     }

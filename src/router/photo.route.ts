@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { protect } from "../controller/auth.controller";
+import { protect, restrictTo } from "../controller/auth.controller";
 import {
   deletePhoto,
   getAllPhotos,
@@ -9,6 +9,7 @@ import {
 } from "../controller/photo.controller";
 import multer from "multer";
 import { apiLimiter } from "../middleware/limiter.middleware";
+import { setRole } from "../middleware/setRoleAdmin.middleware";
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -30,4 +31,8 @@ router
 router.route("/:userId/photo").get(getAllPhotos);
 
 router.route("/:userId/photo/:photoId").get(getSinglePhoto);
+
+router.use(restrictTo("admin"));
+
+router.route("/:userId/photo/:photoId").delete(setRole, deletePhoto);
 export default router;

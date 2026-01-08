@@ -111,8 +111,8 @@ export const deletePhoto = async (
     if (!photoId) {
       throw createError("Please provide photoId", 400);
     }
-
-    const photo = await deletePhotoService(photoId, req.user._id.toString());
+    const userId = req.params.userId || req.user._id.toString();
+    const photo = await deletePhotoService(photoId, userId, req.params.role);
 
     res.status(200).json({ status: "success" });
   } catch (error) {

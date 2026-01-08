@@ -15,7 +15,7 @@ const PhotoSchema = new Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
-PhotoSchema.index({ user: 1, createdAt: -1 });
+PhotoSchema.index({ user: 1, visibility: 1, createdAt: -1 });
 
 export type IPhoto = InferSchemaType<typeof PhotoSchema>;
 
