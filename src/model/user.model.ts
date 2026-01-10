@@ -1,24 +1,17 @@
-import { Document, model, Schema } from "mongoose";
+import { Document, InferSchemaType, model, Schema } from "mongoose";
 import validator from "validator";
 import bcrypt from "bcrypt";
 import JWT from "jsonwebtoken";
+import crypto from "crypto";
 
-export interface IUser extends Document {
-  name: string;
-  email: string;
-  username: string;
-  password: string;
-  passwordConfirm?: string;
-  createdAt: Date;
-  role: string;
-  passwordChangedAt?: Date;
-
+interface IUserMethods {
   signToken(): string;
   comparePassword(candidatePassword: string): Promise<boolean>;
   changedPasswordAfter(JWTTimestamp: number): boolean;
+  createPasswordResetToken(): string;
 }
 
-const UserSchema = new Schema<IUser>({
+const UserSchema = new Schema({
   name: { type: String, required: [true, "name is required"] },
   email: {
     type: String,
@@ -72,6 +65,8 @@ const UserSchema = new Schema<IUser>({
   },
   role: { type: String, default: "user", enum: ["user", "admin"] },
   passwordChangedAt: Date,
+  passwordResetToken: { type: String, default: null },
+  passwordResetExpires: { type: Date, default: null },
 });
 
 UserSchema.pre("save", async function (this: any) {
@@ -79,6 +74,11 @@ UserSchema.pre("save", async function (this: any) {
 
   this.password = await bcrypt.hash(this.password, 12);
   this.passwordConfirm = undefined;
+});
+
+UserSchema.pre("save", async function () {
+  if (!this.isModified("password") || this.isNew) return;
+  this.passwordChangedAt = new Date(Date.now() - 1000);
 });
 
 UserSchema.methods.signToken = function () {
@@ -101,6 +101,22 @@ UserSchema.methods.changedPasswordAfter = function (JWTTimestamp: any) {
   }
   return false;
 };
+
+UserSchema.methods.createPasswordResetToken = function () {
+  const resetToken = crypto.randomBytes(32).toString("hex");
+  this.passwordResetToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+  console.log(resetToken, this.passwordResetToken);
+  this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+
+  return resetToken;
+};
+
+export type IUser = InferSchemaType<typeof UserSchema> &
+  IUserMethods &
+  Document;
 
 const User = model<IUser>("User", UserSchema);
 
