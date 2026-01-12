@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import { RedisClient } from "../config/db.config";
-import User from "../model/user.model";
+import User, { IUserMethods } from "../model/user.model";
 import { createError } from "../utils/error.util";
 import APIFeatures from "../utils/APIFeatures.util";
 

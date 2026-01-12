@@ -100,9 +100,10 @@ export const getAllPhotosService = async (
     const cachedPhotos = await RedisClient.get(photosKey);
 
     if (cachedPhotos) {
+      console.log("cache hit");
       return JSON.parse(cachedPhotos);
     }
-
+    console.log("cache miss");
     const filter: any = { user: userId };
 
     const features = new APIFeatures(Photo.find(filter), queryString)

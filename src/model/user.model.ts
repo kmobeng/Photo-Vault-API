@@ -4,7 +4,7 @@ import bcrypt from "bcrypt";
 import JWT from "jsonwebtoken";
 import crypto from "crypto";
 
-interface IUserMethods {
+export interface IUserMethods {
   signToken(): string;
   comparePassword(candidatePassword: string): Promise<boolean>;
   changedPasswordAfter(JWTTimestamp: number): boolean;
