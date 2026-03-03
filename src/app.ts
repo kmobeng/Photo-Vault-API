@@ -7,6 +7,7 @@ import userRoute from "./router/user.route";
 import photoRoute from "./router/photo.route";
 import albumRoute from "./router/album.route";
 import authRoute from "./router/auth.route";
+import "./config/passport.config"
 
 const app = express();
 
@@ -16,10 +17,10 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
-app.use("/api/photo-vault/auth", authRoute);
+app.use("/api/auth", authRoute);
 
-app.use("/api/photo-vault/user", userRoute);
-app.use("/api/photo-vault/", albumRoute, photoRoute);
+app.use("/api/user", userRoute);
+app.use("/api/", albumRoute, photoRoute);
 
 app.use(errorHandler);
 
