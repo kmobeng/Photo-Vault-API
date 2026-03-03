@@ -7,7 +7,7 @@ import userRoute from "./router/user.route";
 import photoRoute from "./router/photo.route";
 import albumRoute from "./router/album.route";
 import authRoute from "./router/auth.route";
-import "./config/passport.config"
+import "./config/passport.config";
 
 const app = express();
 
@@ -25,3 +25,17 @@ app.use("/api/", albumRoute, photoRoute);
 app.use(errorHandler);
 
 export default app;
+
+// features to add when i am done with oauth
+// implement cookies
+// res.cookie('refreshToken', token, {
+//   httpOnly: true,    // you set this
+//   secure: true,      // you set this
+//   sameSite: 'strict' // you set this
+// });
+// change how username are assigned
+// logout fuctionality.. access token and refresh  token
+// password change for oauth and local user
+// implement linking to google so that he can login with both local and google
+// winston logging
+// sending real emails with sendgrid
