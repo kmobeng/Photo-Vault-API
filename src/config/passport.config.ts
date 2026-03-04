@@ -3,6 +3,21 @@ import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import User from "../model/user.model";
 import { createError } from "../utils/error.util";
 
+passport.serializeUser((user: any, done) => {
+  done(null, user.id);
+});
+
+passport.deserializeUser(async (id:any,done)=>{
+   try {
+     const user = await User.findById(id);
+     if (user) {
+         done(null,user)
+     }
+   } catch (error) {
+    done(error)
+   }
+})
+
 passport.use(
   new GoogleStrategy(
     {
@@ -17,8 +32,7 @@ passport.use(
         const currentUser = await User.findOne({ googleId: profile.id });
 
         if (currentUser) {
-            console.log("There is a user already",currentUser)
-
+          done(null,currentUser)
         } else {
           const email = profile.emails?.[0]?.value;
           if (!email) {
@@ -40,10 +54,8 @@ passport.use(
             passwordConfirm: `google_${profile.id}`,
           });
 
-                  console.log("user created", user);
-
+          done(null,user)
         }
-
       } catch (error) {
         done(error as Error);
       }
