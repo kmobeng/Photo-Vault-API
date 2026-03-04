@@ -1,4 +1,4 @@
-import express from "express";
+import express, { NextFunction, Request, Response } from "express";
 import morgan from "morgan";
 import cors from "cors";
 import helmet from "helmet";
@@ -25,6 +25,16 @@ app.use(
     keys: [process.env.COOKIE_KEY!],
   }),
 );
+
+app.use((req:Request, res:Response, next:NextFunction) => {
+  if (req.session && !req.session.regenerate) {
+    req.session.regenerate = (cb: any) => cb();
+  }
+  if (req.session && !req.session.save) {
+    req.session.save = (cb: any) => cb();
+  }
+  next();
+});
 
 app.use(passport.initialize());
 app.use(passport.session());
