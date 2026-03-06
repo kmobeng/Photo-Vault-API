@@ -42,7 +42,8 @@ export const getMe = async (
   res: Response,
   next: NextFunction,
 ) => {
-  req.params.userId = req.currentUser._id.toString();
+  req.params.userId =
+    req.currentUser._id.toString() || req.user!._id.toString();
   next();
 };
 

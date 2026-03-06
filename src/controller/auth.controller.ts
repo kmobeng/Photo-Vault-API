@@ -5,13 +5,7 @@ import User, { IUser } from "../model/user.model";
 import sendEmail from "../utils/email.util";
 import crypto from "crypto";
 
-declare global {
-  namespace Express {
-    interface Request {
-      currentUser: IUser;
-    }
-  }
-}
+
 
 export const signUp = async (
   req: Request,
@@ -173,7 +167,8 @@ export const googleRedirect = async (
   next: NextFunction,
 ) => {
   try {
-    res.send(req.user);
+    // redirect to profile
+    res.redirect("/api/user/me");
   } catch (error) {
     next(error);
   }

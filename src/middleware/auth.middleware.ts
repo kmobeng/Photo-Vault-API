@@ -3,14 +3,6 @@ import { Request, Response, NextFunction } from "express";
 import { createError } from "../utils/error.util";
 import User, { IUser } from "../model/user.model";
 
-declare global {
-  namespace Express {
-    interface Request {
-      currentUser: IUser;
-    }
-  }
-}
-
 interface JWTPayload {
   id: string;
   iat: number;
