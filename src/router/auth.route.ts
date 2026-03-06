@@ -23,6 +23,15 @@ router.get(
   }),
 );
 
-router.get("/google/redirect",passport.authenticate('google'),googleRedirect)
+// router.get("/google/redirect",passport.authenticate('google'),googleRedirect)
+
+router.get(
+  "/google/redirect",
+  passport.authenticate("google", {
+    failureRedirect: "/api/auth/login",
+    session: true,
+  }),
+  googleRedirect
+);
 
 export default router;
