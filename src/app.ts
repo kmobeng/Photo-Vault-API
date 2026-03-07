@@ -49,6 +49,7 @@ app.use(errorHandler);
 export default app;
 
 // features to add when i am done with oauth
+// handle logout for both jwt and oauth users
 // fix cors. origin and credentials
 // set the protect middleware to skip users with google login
 // implement development and production enviroments. determine what to write in dev and prod mode
@@ -64,3 +65,4 @@ export default app;
 // implement linking to google so that he can login with both local and google
 // winston logging
 // sending real emails with sendgrid
+// add env.example to github

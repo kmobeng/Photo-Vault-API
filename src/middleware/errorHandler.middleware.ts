@@ -1,10 +1,29 @@
 import { Request, Response, NextFunction } from "express";
 
+const sendErrorDev = (err: any, res: Response) => {
+  res.status(err.statusCode).json({
+    status: "fail",
+    error: err.errorMessage,
+    name: err.name,
+    message: err.message,
+    stack: err.stack,
+    raw: err,
+  });
+};
+
+const sendErrorProd = (err: any, res: Response) => {
+  res.status(err.statusCode).json({
+    status: "fail",
+    error: err.errorMessage,
+    name: err.name,
+  });
+};
+
 export const errorHandler = (
   err: any,
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   let statusCode = err.status || 500;
   let errorMessage = err.errorMessage || "Internal server error";
@@ -36,11 +55,9 @@ export const errorHandler = (
     errorMessage = "Token expired. Please login again.";
   }
 
-  console.log(err);
-
-  res.status(statusCode).json({
-    status: "fail",
-    error: errorMessage,
-    name: err.name,
-  });
+  if (process.env.NODE_ENV === "development") {
+    sendErrorDev(err, res);
+  } else {
+    sendErrorProd(err, res);
+  }
 };
