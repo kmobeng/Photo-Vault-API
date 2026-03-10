@@ -23,7 +23,7 @@ app.use(cookieParser())
 
 app.use(
   cookieSession({
-    maxAge: 24 * 60 * 60 * 1000,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
     keys: [process.env.COOKIE_KEY!],
   }),
 );
@@ -50,18 +50,4 @@ app.use(errorHandler);
 
 export default app;
 
-// features to add when i am done with oauth
-// handle logout for both jwt and oauth users
-// fix cors. origin and credentials
-// implement cookies
-// res.cookie('refreshToken', token, {
-//   httpOnly: true,    // you set this
-//   secure: true,      // you set this
-//   sameSite: 'strict' // you set this
-// });
-// change how username are assigned
-// logout fuctionality.. access token and refresh  token
-// password change for oauth and local user
-// implement linking to google so that he can login with both local and google
-// sending real emails with sendgrid
-// add env.example to github
+
