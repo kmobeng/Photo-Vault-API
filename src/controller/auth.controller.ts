@@ -6,6 +6,7 @@ import sendEmail from "../utils/email.util";
 import crypto from "crypto";
 
 const Token = (res: Response, user: IUser) => {
+  console.log("hi");
   const cookieOptions: any = {
     expires: new Date(
       Date.now() +
@@ -20,6 +21,7 @@ const Token = (res: Response, user: IUser) => {
     ((cookieOptions.secure = true), (cookieOptions.sameSite = "strict"));
   }
 
+  console.log("hello");
   const token = user.signToken();
   res.cookie("token", token, cookieOptions);
 };
@@ -40,10 +42,10 @@ export const signUp = async (
       role,
     );
 
+    Token(res, fetchedUser);
+
     const user: any = fetchedUser.toObject();
     delete user.password;
-
-    Token(res, user);
 
     res.status(201).json({ status: "success", data: { user } });
   } catch (error) {
@@ -64,10 +66,10 @@ export const login = async (
 
     const fetchedUser = await loginService(email, password);
 
+    Token(res, fetchedUser);
+
     const user: any = fetchedUser.toObject();
     delete user.password;
-
-    Token(res, user);
 
     res.status(200).json({ status: "success", data: { user } });
   } catch (error) {
@@ -170,13 +172,13 @@ export const googleRedirect = async (
 ) => {
   try {
     const user = req.user as IUser;
-    res
-      .status(200)
-      .json({
-        status: "success",
-        message: "Logged in with Google. Please change your password.",
-        data: { user },
-      });
+
+    Token(res, user);
+    res.status(200).json({
+      status: "success",
+      message: "Logged in with Google. Please set password to continue.",
+      data: { user },
+    });
   } catch (error) {
     next(error);
   }

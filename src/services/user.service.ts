@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import { RedisClient } from "../config/db.config";
-import User from "../model/user.model";
+import User, { IUser } from "../model/user.model";
 import { createError } from "../utils/error.util";
 import APIFeatures from "../utils/APIFeatures.util";
 
@@ -86,9 +86,9 @@ export const deleteUserService = async (userId: string) => {
 
 export const changePasswordService = async (
   id: string,
-  currentPassword: string,
   newPassword: string,
   newPasswordConfirm: string,
+  currentPassword?: string,
 ) => {
   try {
     const user = await User.findById(id).select("+password");
@@ -97,7 +97,15 @@ export const changePasswordService = async (
       throw createError("no user found", 400);
     }
 
-    if (!(await user.comparePassword(currentPassword))) {
+    if (user.needToChangePassword) {
+      user.password = newPassword;
+      user.passwordConfirm = newPasswordConfirm;
+      user.needToChangePassword = false;
+      await user.save();
+      return user;
+    }
+
+    if (currentPassword && !(await user.comparePassword(currentPassword))) {
       throw createError("Incorrect password", 400);
     }
 

@@ -78,18 +78,39 @@ export const deleteUser = async (
   }
 };
 
-export const changePassword = async (req:Request, res:Response, next :NextFunction):Promise<void>=>{
+export const changePassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
-    const {currentPassword, newPassword, newPasswordConfirm} = req.body
+    const { currentPassword, newPassword, newPasswordConfirm } = req.body;
 
-    if (!currentPassword || !newPassword || !newPasswordConfirm) {
-      throw createError("Please provide current password, new password and confirm password to continue",400)
+    if (req.currentUser.needToChangePassword == false && !currentPassword) {
+      throw createError(
+        "Please provide current password,new password and confirm password to continue",
+        400,
+      );
     }
 
-    const result = await changePasswordService(req.currentUser._id.toString(),currentPassword,newPassword, newPasswordConfirm)
+    if (!newPassword || !newPasswordConfirm) {
+      throw createError(
+        "Please provide new password and confirm password to continue",
+        400,
+      );
+    }
 
-    res.status(200).json({status: "success", message:"Password changed successfully"})
+    const result = await changePasswordService(
+      req.currentUser._id.toString(),
+      newPassword,
+      newPasswordConfirm,
+      currentPassword,
+    );
+
+    res
+      .status(200)
+      .json({ status: "success", message: "Password changed successfully" });
   } catch (error) {
-    next(error)
+    next(error);
   }
-}
+};
