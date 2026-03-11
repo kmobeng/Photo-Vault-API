@@ -6,7 +6,6 @@ import sendEmail from "../utils/email.util";
 import crypto from "crypto";
 
 const Token = (res: Response, user: IUser) => {
-  console.log("hi");
   const cookieOptions: any = {
     expires: new Date(
       Date.now() +
@@ -21,7 +20,6 @@ const Token = (res: Response, user: IUser) => {
     ((cookieOptions.secure = true), (cookieOptions.sameSite = "strict"));
   }
 
-  console.log("hello");
   const token = user.signToken();
   res.cookie("token", token, cookieOptions);
 };

@@ -4,6 +4,7 @@ import { createError } from "../utils/error.util";
 import { cloudinary, RedisClient } from "../config/db.config";
 import APIFeatures from "../utils/APIFeatures.util";
 import User from "../model/user.model";
+import logger from "../config/wiston.config";
 
 export const uploadPhotoService = async (
   title: string,
@@ -70,9 +71,9 @@ export const uploadPhotoService = async (
     if (publicId) {
       try {
         await cloudinary.uploader.destroy(publicId);
-        console.log("Cloudinary cleanup successful");
+       logger.info("Cloudinary cleanup successful");
       } catch (deleteError) {
-        console.error("Failed to cleanup Cloudinary:", deleteError);
+        logger.error("Failed to cleanup Cloudinary:", deleteError);
       }
     }
     throw error;
@@ -100,10 +101,8 @@ export const getAllPhotosService = async (
     const cachedPhotos = await RedisClient.get(photosKey);
 
     if (cachedPhotos) {
-      console.log("cache hit");
       return JSON.parse(cachedPhotos);
     }
-    console.log("cache miss");
     const filter: any = { user: userId };
 
     const features = new APIFeatures(Photo.find(filter), queryString)
