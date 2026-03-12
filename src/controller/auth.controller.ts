@@ -118,7 +118,7 @@ If you didn't forget your password, please ignore this email.`;
 
       await user.save({ validateBeforeSave: false });
 
-      return next(createError("Error while sending email", 500));
+      throw createError("Could not send reset email, please try again", 500);
     }
     res.status(200).json({
       status: "success",
