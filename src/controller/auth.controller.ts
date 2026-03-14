@@ -226,8 +226,8 @@ export const requestEmailVerify = async (
 ) => {
   try {
     // get email from req.user
-    const email = req.user?.email;
-    if (req.user?.isEmailVerified === true) {
+    const email = req.currentUser.email;
+    if (req.currentUser.isEmailVerified === true) {
       throw createError("Email already verified", 400);
     }
     // generate email with crypto package and hash it
@@ -240,7 +240,7 @@ export const requestEmailVerify = async (
     // save token and expiration time
 
     const saveToken = await User.findByIdAndUpdate(
-      req.user?._id,
+      req.currentUser._id,
       {
         $set: {
           verifyEmailToken: hashedToken,

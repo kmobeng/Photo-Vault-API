@@ -40,7 +40,7 @@ router.get(
 
 router.use(protect);
 
-router.get("/verify-email/", verifyEmail);
-router.patch("verify-email/request", requestEmailVerify);
+router.post("/verify-email/", verifyEmail);
+router.post("/verify-email/request", requestEmailVerify);
 
 export default router;
