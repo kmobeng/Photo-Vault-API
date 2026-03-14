@@ -4,29 +4,29 @@ A secure RESTful API for storing and managing photos and albums. Built with Node
 
 ## Features
 
-- **Authentication** — JWT via HttpOnly cookies, Google OAuth 2.0, forgot/reset password via email
-- **Photos** — Upload to Cloudinary, manage visibility (public/private), view other users' public photos
-- **Albums** — Create and organize photos into albums
-- **Roles** — `user` and `admin` roles with protected admin-only routes
-- **Caching** — Redis caching for frequently accessed data
-- **Security** — Helmet, CORS, rate limiting, bcrypt password hashing, SHA-256 hashed reset tokens
-
----
+- Authentication with JWT in HttpOnly cookies
+- Google OAuth 2.0 login via Passport
+- Email verification flow with OTP token and resend endpoint
+- Forgot/reset password flow via email
+- Photo upload and storage via Cloudinary
+- Album management with user ownership checks
+- Role-based authorization for admin actions
+- Redis cache invalidation for user-list updates
+- Security middleware: Helmet, CORS, and route-level rate limiting
+- Structured request logging with Morgan + Winston
 
 ## Tech Stack
 
-| Layer     | Technology                          |
-| --------- | ----------------------------------- |
-| Runtime   | Node.js + TypeScript                |
-| Framework | Express 5                           |
-| Database  | MongoDB (Mongoose)                  |
-| Cache     | Redis (ioredis)                     |
-| Storage   | Cloudinary                          |
-| Auth      | JWT, Passport.js (Google OAuth 2.0) |
-| Email     | Nodemailer                          |
-| Logging   | Winston, Morgan                     |
-
----
+| Layer | Technology |
+| --- | --- |
+| Runtime | Node.js + TypeScript |
+| Framework | Express 5 |
+| Database | MongoDB (Mongoose) |
+| Cache | Redis (ioredis) |
+| Storage | Cloudinary |
+| Auth | JWT, Passport.js (Google OAuth 2.0) |
+| Email | Nodemailer |
+| Logging | Winston, Morgan |
 
 ## Getting Started
 
@@ -48,7 +48,7 @@ npm install
 
 ### Environment Variables
 
-Copy `.env.example` to `.env` in the project root, then replace placeholder values with your real credentials:
+Copy .env.example to .env:
 
 ```bash
 cp .env.example .env
@@ -57,6 +57,7 @@ cp .env.example .env
 Required variables in `.env`:
 
 ```env
+# Server
 PORT=4000
 NODE_ENV=development
 
@@ -71,7 +72,7 @@ JWT_SECRET=your_jwt_secret
 JWT_EXPIRES_IN=7d
 JWT_COOKIE_EXPIRES_IN=7
 
-# Cookie Session (OAuth only)
+# Cookie Session (OAuth)
 COOKIE_KEY=your_cookie_session_key
 
 # Google OAuth
@@ -83,9 +84,9 @@ CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
 
 # Email
-EMAIL_FROM=username@yourdomain.com
+EMAIL_FROM=Photo Vault <noreply@yourdomain.com>
 
-# SendGrid (production only)
+# SendGrid (production)
 SENDGRID_USERNAME=apikey
 SENDGRID_PASSWORD=your_sendgrid_api_key
 ```
@@ -102,148 +103,113 @@ SENDGRID_PASSWORD=your_sendgrid_api_key
 # Development
 npm run dev
 
-# Production
-npm run start
-
 # Build
 npm run build
+
+# Production
+npm run start
 ```
 
----
+## Security and Access Rules
+
+- Passwords are hashed with bcrypt.
+- JWT is stored in HttpOnly cookie; secure/sameSite are enabled in production.
+- Password reset and email verification tokens are hashed with SHA-256 before storage.
+- Route protections use protect, restrictTo, needToChangePassword, and isEmailVerified middleware.
+- Login and reset-password routes are rate-limited.
+- API routes are rate-limited.
 
 ## API Reference
 
-### Auth — `/api/auth`
+Base URL: /api
 
-| Method | Endpoint                 | Description                  | Auth   |
-| ------ | ------------------------ | ---------------------------- | ------ |
-| POST   | `/signup`                | Register a new user          | Public |
-| POST   | `/login`                 | Log in with email & password | Public |
-| POST   | `/forgot-password`       | Send password reset email    | Public |
-| POST   | `/reset-password/:token` | Reset password using token   | Public |
-| GET    | `/google`                | Initiate Google OAuth flow   | Public |
-| GET    | `/google/redirect`       | Google OAuth callback        | Public |
+### Auth Routes (/api/auth)
 
-#### Sign Up
+| Method | Endpoint | Description | Guard |
+| --- | --- | --- | --- |
+| POST | /signup | Register a user and send email verification code | Public + loginLimiter |
+| POST | /login | Login with email and password | Public + loginLimiter |
+| POST | /forgot-password | Send password reset token | Public + resetPasswordLimiter |
+| POST | /reset-password/:token | Reset password by token | Public + resetPasswordLimiter |
+| GET | /google | Start Google OAuth | Public |
+| GET | /google/redirect | Google OAuth callback | Public |
+| POST | /verify-email | Verify email with token in body | Auth required |
+| POST | /verify-email/request | Request a new email verification token | Auth required |
+
+Verify email request body:
 
 ```json
-POST /api/auth/signup
 {
-  "name": "John Doe",
-  "email": "john@example.com",
-  "password": "password123",
-  "passwordConfirm": "password123"
+  "emailToken": "12345"
 }
 ```
 
-#### Login
+### User Routes (/api/user)
 
-```json
-POST /api/auth/login
-{
-  "email": "john@example.com",
-  "password": "password123"
-}
-```
+Global middleware order:
 
----
+1. protect
+2. isEmailVerified
+3. apiLimiter
 
-### Users — `/api/user`
+Then:
 
-All user routes require authentication.
+- PATCH /change-password
+- needToChangePassword middleware applies to routes below:
+- GET /me
+- PATCH /update-me
+- Admin only: GET /
+- Admin only: GET /:userId
+- Admin only: DELETE /:userId
 
-| Method | Endpoint           | Description             | Role  |
-| ------ | ------------------ | ----------------------- | ----- |
-| PATCH  | `/change-password` | Change current password | User  |
-| GET    | `/me`              | Get your own profile    | User  |
-| PATCH  | `/update-me`       | Update your name        | User  |
-| GET    | `/`                | Get all users           | Admin |
-| GET    | `/:userId`         | Get a single user       | Admin |
-| DELETE | `/:userId`         | Delete a user           | Admin |
+### Photo Routes (/api)
 
-> **Note:** Google OAuth users must call `PATCH /change-password` before accessing any other user routes.
+Global middleware: protect, isEmailVerified, needToChangePassword, apiLimiter
 
----
+- POST /photo (multipart/form-data, field: photo)
+- GET /photo
+- GET /photo/:photoId
+- PATCH /photo/:photoId
+- DELETE /photo/:photoId
+- GET /:userId/photo
+- GET /:userId/photo/:photoId
+- Admin only: DELETE /:userId/photo/:photoId
 
-### Photos — `/api`
+Upload photo payload:
 
-All photo routes require authentication.
-
-| Method | Endpoint                  | Description                      |
-| ------ | ------------------------- | -------------------------------- |
-| POST   | `/photo`                  | Upload a photo                   |
-| GET    | `/photo`                  | Get your photos                  |
-| GET    | `/photo/:photoId`         | Get a single photo               |
-| PATCH  | `/photo/:photoId`         | Update photo title/visibility    |
-| DELETE | `/photo/:photoId`         | Delete a photo                   |
-| GET    | `/:userId/photo`          | Get another user's public photos |
-| GET    | `/:userId/photo/:photoId` | Get a specific public photo      |
-
-#### Upload Photo
-
-```
-POST /api/photo
+```text
 Content-Type: multipart/form-data
 
-photo:        <file>
-title:        "My Photo"
-description:  "A description"
-visibility:   "public" | "private"
-albumId:      <optional album ID>
+photo: file (required)
+title: string
+description: string
+visibility: public | private
+albumId: optional
 ```
 
----
+### Album Routes (/api)
 
-### Albums — `/api`
+Global middleware: protect, isEmailVerified, needToChangePassword, apiLimiter
 
-All album routes require authentication.
-
-| Method | Endpoint                  | Description               |
-| ------ | ------------------------- | ------------------------- |
-| POST   | `/album`                  | Create an album           |
-| GET    | `/album`                  | Get your albums           |
-| GET    | `/album/:albumId`         | Get a single album        |
-| PATCH  | `/album/:albumId`         | Update album name         |
-| DELETE | `/album/:albumId`         | Delete an album           |
-| GET    | `/:userId/album`          | Get another user's albums |
-| GET    | `/:userId/album/:albumId` | Get a specific album      |
-
----
+- POST /album
+- GET /album
+- GET /album/:albumId
+- PATCH /album/:albumId
+- DELETE /album/:albumId
+- GET /:userId/album
+- GET /:userId/album/:albumId
 
 ## Project Structure
 
-```
+```text
 src/
-├── app.ts                  # Express app setup
-├── server.ts               # Server entry point
-├── config/
-│   ├── db.config.ts        # MongoDB & Redis connection
-│   ├── passport.config.ts  # Google OAuth strategy
-│   ├── httpLogger.config.ts
-│   └── wiston.config.ts    # Winston logger
-├── controller/             # Route handlers
-├── middleware/
-│   ├── auth.middleware.ts  # protect, restrictTo, needToChangePassword
-│   ├── errorHandler.middleware.ts
-│   ├── limiter.middleware.ts
-│   └── setRoleAdmin.middleware.ts
-├── model/                  # Mongoose schemas
-├── router/                 # Express routers
-├── services/               # Business logic
-└── utils/
-    ├── APIFeatures.util.ts # Filtering, sorting, pagination
-    ├── email.util.ts
-    └── error.util.ts
+  app.ts
+  server.ts
+  config/
+  controller/
+  middleware/
+  model/
+  router/
+  services/
+  utils/
 ```
-
----
-
-## Security
-
-- Passwords hashed with **bcrypt**
-- JWT stored in **HttpOnly cookies** (secure + sameSite in production)
-- Password reset tokens hashed with **SHA-256** before DB storage (valid 10 minutes)
-- **Helmet** sets secure HTTP headers
-- **Rate limiting** on auth and general API routes
-- Role-based access control with `restrictTo` middleware
-- Google OAuth users flagged with `needToChangePassword` until they set a real password
