@@ -68,3 +68,17 @@ export const needToChangePassword = async (
   }
   next();
 };
+
+export const isEmailVerified = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  if (req.currentUser.isEmailVerified === false) {
+    throw createError(
+      "Your email is not verified. Please verify your email to continue",
+      403,
+    );
+  }
+  next();
+};

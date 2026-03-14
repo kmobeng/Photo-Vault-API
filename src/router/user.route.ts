@@ -9,6 +9,7 @@ import {
 } from "../controller/user.controller";
 import { apiLimiter } from "../middleware/limiter.middleware";
 import {
+  isEmailVerified,
   needToChangePassword,
   protect,
   restrictTo,
@@ -17,6 +18,7 @@ import {
 const router = Router();
 
 router.use(protect);
+router.use(isEmailVerified)
 router.use(apiLimiter);
 
 router.patch("/change-password", changePassword);

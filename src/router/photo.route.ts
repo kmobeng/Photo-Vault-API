@@ -10,6 +10,7 @@ import multer from "multer";
 import { apiLimiter } from "../middleware/limiter.middleware";
 import { setRole } from "../middleware/setRoleAdmin.middleware";
 import {
+  isEmailVerified,
   needToChangePassword,
   protect,
   restrictTo,
@@ -19,6 +20,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 const router = Router();
 router.use(protect);
+router.use(isEmailVerified)
 router.use(needToChangePassword);
 router.use(apiLimiter);
 

@@ -3,11 +3,17 @@ import {
   forgotPassword,
   googleRedirect,
   login,
+  requestEmailVerify,
   resetPassword,
   signUp,
+  verifyEmail,
 } from "../controller/auth.controller";
-import { loginLimiter, resetPasswordLimiter } from "../middleware/limiter.middleware";
+import {
+  loginLimiter,
+  resetPasswordLimiter,
+} from "../middleware/limiter.middleware";
 import passport from "passport";
+import { protect } from "../middleware/auth.middleware";
 
 const router = Router();
 
@@ -19,10 +25,9 @@ router.post("/reset-password/:token", resetPasswordLimiter, resetPassword);
 router.get(
   "/google",
   passport.authenticate("google", {
-    scope: ["profile","email"],
+    scope: ["profile", "email"],
   }),
 );
-
 
 router.get(
   "/google/redirect",
@@ -30,7 +35,12 @@ router.get(
     failureRedirect: "/api/auth/login",
     session: true,
   }),
-  googleRedirect
+  googleRedirect,
 );
+
+router.use(protect);
+
+router.get("/verify-email/", verifyEmail);
+router.patch("verify-email/request", requestEmailVerify);
 
 export default router;
