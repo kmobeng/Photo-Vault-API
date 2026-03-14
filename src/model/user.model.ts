@@ -3,12 +3,13 @@ import validator from "validator";
 import bcrypt from "bcrypt";
 import JWT from "jsonwebtoken";
 import crypto from "crypto";
+import isEmail from "validator/lib/isEmail";
 
 export interface IUserMethods {
   signToken(): string;
   comparePassword(candidatePassword: string): Promise<boolean>;
   changedPasswordAfter(JWTTimestamp: number): boolean;
-  createPasswordResetToken(): string;
+  createPasswordToken(): string;
 }
 
 const UserSchema = new Schema({
@@ -41,6 +42,9 @@ const UserSchema = new Schema({
   role: { type: String, default: "user", enum: ["user", "admin"] },
   provider: { type: String, default: "local", enum: ["local", "google"] },
   needToChangePassword: { type: Boolean, default: false },
+  isEmailVerified: { type: Boolean, default: false },
+  emailVerificationToken: { type: String, default: null,select: false },
+  emailverificationTokenExpires: { type: Date, default: null, select: false },
   createdAt: { type: Date, default: Date.now },
   passwordChangedAt: Date,
   passwordResetToken: { type: String, default: null, select: false },
@@ -80,7 +84,7 @@ UserSchema.methods.changedPasswordAfter = function (JWTTimestamp: any) {
   return false;
 };
 
-UserSchema.methods.createPasswordResetToken = function () {
+UserSchema.methods.createPasswordToken = function () {
   const resetToken = crypto.randomBytes(32).toString("hex");
   this.passwordResetToken = crypto
     .createHash("sha256")

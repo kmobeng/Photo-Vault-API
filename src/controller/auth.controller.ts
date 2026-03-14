@@ -42,10 +42,48 @@ export const signUp = async (
 
     Token(res, fetchedUser);
 
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+    fetchedUser.emailVerificationToken = crypto
+      .createHash("sha256")
+      .update(verificationToken)
+      .digest("hex");
+    fetchedUser.emailverificationTokenExpires = new Date(
+      Date.now() + 10 * 60 * 1000,
+    );
+
+    await fetchedUser.save({ validateBeforeSave: false });
+
     const user: any = fetchedUser.toObject();
     delete user.password;
+    delete user.emailVerificationToken;
+    delete user.emailverificationTokenExpires;
 
-    res.status(201).json({ status: "success", data: { user } });
+    const message = `Welcome to Photo Vault, ${user.name}!
+    Please verify your email to access all features of our application here: ${req.protocol}://${req.get(
+      "host",
+    )}/api/auth/verify-email/${verificationToken}
+    If you didn't create an account, please ignore this email.`;
+
+    try {
+      await sendEmail({
+        email: fetchedUser.email,
+        subject: "Your account verification token (valid for 10 minutes)",
+        message,
+      });
+    } catch (error) {
+      fetchedUser.emailVerificationToken = null;
+      fetchedUser.emailverificationTokenExpires = null;
+
+      await fetchedUser.save({ validateBeforeSave: false });
+
+      throw createError("Could not send reset email, please try again", 500);
+    }
+
+    res.status(201).json({
+      status: "success",
+      message: "Email verification token sent to email",
+      data: { user },
+    });
   } catch (error) {
     next(error);
   }
@@ -92,7 +130,7 @@ export const forgotPassword = async (
       return next(createError("No user with this email found", 404));
     }
 
-    const resetToken = user.createPasswordResetToken();
+    const resetToken = user.createPasswordToken();
 
     await user.save({ validateBeforeSave: false });
 

@@ -51,6 +51,7 @@ passport.use(
             password: `google_${profile.id}`, //dummy password for required field
             passwordConfirm: `google_${profile.id}`,
             needToChangePassword: true,
+            isEmailVerified: true,
           });
           const usersKey = `users:all`;
           RedisClient.del(usersKey);
